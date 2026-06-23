@@ -141,6 +141,24 @@ class Bomb:
         screen.blit(self.img, self.rct)
 
 
+class Score:
+    """
+    スコア表示に関するクラス
+    """
+    def __init__(self):
+        self.fonto = pg.font.Font(None, 30)
+        self.color = (0, 0, 255)  # 青色
+        self.value = 0
+        self.img = self.fonto.render(f"Score: {self.value}", 0, self.color)
+        self.rct = self.img.get_rect()
+        self.rct.center = (100, HEIGHT - 50)  # 左下に配置
+
+    def update(self, screen: pg.Surface):
+        self.img = self.fonto.render(f"Score: {self.value}", 0, self.color)
+        screen.blit(self.img, self.rct)
+
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
@@ -152,6 +170,8 @@ def main():
     #     bomb = Bomb((255, 0, 0), 10)
     #     bombs.append(bomb)
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
+
+    score = Score()
 
     beam = None  # ゲーム初期化時にはビームは存在しない
     clock = pg.time.Clock()
@@ -183,6 +203,8 @@ def main():
                     pg.display.update()
                     beam = None
                     bombs[i] = None
+                    score.value += 1
+
         bombs = [bomb for bomb in bombs if bomb is not None]
 
         key_lst = pg.key.get_pressed()
@@ -191,6 +213,7 @@ def main():
             beam.update(screen)   
         for bomb in bombs:
             bomb.update(screen)
+        score.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
