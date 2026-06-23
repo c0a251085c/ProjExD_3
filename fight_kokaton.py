@@ -158,6 +158,36 @@ class Score:
         screen.blit(self.img, self.rct)
 
 
+class Explosion:
+    """
+    爆弾が爆発したときの爆発エフェクトに関するクラス
+    """
+    def __init__(self, bomb: "Bomb"):
+        """
+        爆発SurfaceのリストとRect，表示時間を設定する
+        引数 bomb：爆発する爆弾（Bombインスタンス）
+        """
+        img = pg.image.load("fig/explosion.gif")
+        # 元の画像と，上下左右に反転した画像の2つのSurfaceをリストに格納
+        self.imgs = [img, pg.transform.flip(img, True, True)]
+        self.img = self.imgs[0]
+        self.rct = self.img.get_rect()
+        self.rct.center = bomb.rct.center  # 爆発した爆弾のrct.centerに座標を設定
+        self.life = 20  # 表示時間（爆発時間）lifeを設定
+ 
+    def update(self, screen: pg.Surface):
+        """
+        爆発経過時間lifeを1減算し，lifeが正の間は2つのSurfaceを
+        交互に切り替えて爆発を演出する
+        引数 screen：画面Surface
+        """
+        self.life -= 1  # 爆発経過時間lifeを1減算
+        if self.life > 0:  # lifeが正なら描画する
+            # life//5 で5フレームごとに切り替える（毎フレームだと目がチラチラするため）
+            self.img = self.imgs[self.life // 5 % 2]
+            screen.blit(self.img, self.rct)
+
+
 
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
@@ -172,8 +202,8 @@ def main():
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
 
     score = Score()
-
     beams = []  # ゲーム初期化時にはビームは存在しない
+    explosions = []  # 爆発エフェクトのリスト
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -189,9 +219,6 @@ def main():
             if bird.rct.colliderect(bomb.rct):
                 # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
                 bird.change_img(8, screen)
-                fonto = pg.font.Font(None, 80)
-                txt = fonto.render("Game Over", True, (255, 0, 0))
-                screen.blit(txt, [WIDTH//2-150, HEIGHT//2])
                 pg.display.update()
                 time.sleep(1)
                 return
@@ -200,10 +227,12 @@ def main():
             for j ,beam in enumerate(beams):
                 if beam is not None:
                     if beam.rct.colliderect(bomb.rct):  # ビームで爆弾を撃ち落としたら
+
+                        beams[j] = None  # 衝突したビームをNoneにする
+                        explosions.append(Explosion(bomb))  # 爆発エフェクトを生成する
+                        bombs[i] = None  # 衝突した爆弾をNoneにする
                         bird.change_img(6, screen)
                         pg.display.update()
-                        beams[j] = None
-                        bombs[i] = None
                         score.value += 1
                         break  # 爆弾は1つのビームでしか撃ち落とせないので，内側のループを抜ける
 
@@ -212,12 +241,16 @@ def main():
 
         beams = [beam for beam in beams if check_bound(beam.rct)[0]]
 
+        explosions = [explosion for explosion in explosions if explosion.life > 0]
+
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
         for beam in beams:
             beam.update(screen)         
         for bomb in bombs:
             bomb.update(screen)
+        for explosion in explosions:
+            explosion.update(screen)
         score.update(screen)
         pg.display.update()
         tmr += 1
