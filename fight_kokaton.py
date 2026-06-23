@@ -200,7 +200,6 @@ def main():
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bird = Bird((300, 200))
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
- 
     score = Score()
     beams = []  # ゲーム初期化時にはビームは存在しない
     explosions = []  # 爆発エフェクトのリスト
